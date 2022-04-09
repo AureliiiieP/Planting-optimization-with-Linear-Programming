@@ -1,6 +1,4 @@
-import os
 import yaml
-import numpy as np
 import pandas as pd
 from model.model import generate_model_parameters, build_model
 from model.demand_processing import PlantDemand
@@ -21,8 +19,8 @@ def optimization():
     ###################################
     # Optimization model
     ###################################
-    generate_model_parameters(config, plant_demand_df)
-    build_model(config)
+    parameters = generate_model_parameters(config, plant_demand_df)
+    build_model(config, parameters)
     pass
 
 if __name__ == "__main__":
