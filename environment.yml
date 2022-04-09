@@ -7,7 +7,7 @@ dependencies:
   - _openmp_mutex=4.5=1_gnu
   - amply=0.1.4=py_0
   - blas=1.0=mkl
-  - ca-certificates=2022.3.29=h06a4308_0
+  - ca-certificates=2021.10.8=ha878542_0
   - certifi=2021.10.8=py37h06a4308_2
   - coincbc=2.9.8=1
   - cycler=0.11.0=pyhd3eb1b0_0
@@ -50,7 +50,6 @@ dependencies:
   - pcre=8.45=h295c915_0
   - pip=20.0.2=py37_3
   - plotly=4.7.1=py_0
-  - pulp=2.3=py37hc8dfbb8_2
   - pyparsing=3.0.4=pyhd3eb1b0_0
   - pyqt=5.9.2=py37h05f1152_2
   - python=3.7.7=hcff3b4d_5
@@ -72,5 +71,9 @@ dependencies:
   - yaml=0.1.7=had09818_2
   - zlib=1.2.11=h7f8727e_4
   - pip:
+    - et-xmlfile==1.1.0
+    - openpyxl==3.0.9
+    - pulp==2.6.0
     - pyyaml==6.0
+    - xlrd==2.0.1
 
