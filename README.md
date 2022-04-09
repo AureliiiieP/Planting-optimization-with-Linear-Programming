@@ -1,8 +1,10 @@
 # Planting-optimization-with-Linear-Programming
 
-Small project to learn Linear Programming problems. 
+Small project to learn how to design and solve Linear Programming models using PuLP. 
+
 Optimize how to plant seeds in containers since it's Spring !
 
+## Introduction
 The goal is to decide how to allocate plants to the available containers based on their characteristics while minimizing number of containers used and amount of soil to prepare/buy.
 
 <img src="doc/plants.png"/>
