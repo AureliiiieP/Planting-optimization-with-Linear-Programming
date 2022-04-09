@@ -129,16 +129,16 @@ class OptModel(object):
             )
             for c in range(self.no_containers)
         }
-        
 
         # Whether container is used
         self.container_allocation_constraint = {
             f"container_allocation_constraint_{c}": self.model.addConstraint(
                 LpConstraint(
-                    e= self.container_allocation_flag[c]
-                    - lpSum(
+                    e= lpSum(
                         self.allocation_flag[c][p] for p in range(self.no_plants)
-                    ),
+                    )
+                    - self.container_allocation_flag[c]*self.config["solver"]["dummy_param"]
+                    ,
                     sense=const.LpConstraintLE,
                     name=f"container_allocation_constraint_{c}",
                     rhs=0,
