@@ -28,6 +28,28 @@ conda env create -f environment.yml
 python3 main.py
 ```
 
+## Example of result
+Using the provided data and config file : 
+
+```
+=========================
+Plan for : deep_pot
+Using : 15 / 15 L of soil
+[('Zucchini', 15)]
+=========================
+Plan for : large_rectangular_container
+Using : 22 / 22 L of soil
+[('Radish', 1), ('Radish', 1), ('Stevia', 10), ('Garlic', 5), ('Garlic', 5)]
+=========================
+Plan for : raised_bed_part_1
+Using : 37 / 40 L of soil
+[('Radish', 1), ('Radish', 1), ('Radish', 1), ('Radish', 1), ('Radish', 1), ('Radish', 1), ('Garlic', 5), ('Basil', 4), ('Chive', 2), ('Passion Fruit', 20)]
+=========================
+Plan for : raised_bed_part_2
+Using : 8 / 10 L of soil
+[('Bush Bean', 8)]
+```
+
 ## Ideas list
 - [ ] Add more constraints (sun exposure, soil type)
 - [ ] Add scheduling of when to sow (e.g. radish = March, garlic = winter)
