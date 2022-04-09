@@ -2,7 +2,6 @@ import yaml
 import pandas as pd
 from model.model import generate_model_parameters, build_model
 from model.demand_processing import PlantDemand, ContainerManager
-from model.util import draw_grid
 
 def optimization():
     config = yaml.load(open("config.yml"), Loader=yaml.FullLoader)
