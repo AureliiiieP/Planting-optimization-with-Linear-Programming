@@ -14,7 +14,6 @@ class OptModel(object):
     ):
         self.config = deepcopy(config)
         self.parameters = deepcopy(parameters)
-        self.demand = self.parameters["demand"]
         self.plants = self.parameters["plants"]
         self.soil_capacity_wanted = self.parameters["soil_capacity_wanted"]
         self.containers = self.parameters["containers"]
@@ -30,14 +29,15 @@ class OptModel(object):
         self.create_objective_function()
         print("Create model for", self.no_plants, "plants in", self.no_containers, "containers.")
 
-                
+
+
     def create_decision_variables(self):
         print("Create decision variables")
         # Allocation of plant p for container c
         self.allocation_flag = [
             [
                 LpVariable(
-                    f"plant_{p}_{c}",
+                    f"plant_{c}_{p}",
                     lowBound=0,
                     cat=const.LpBinary,
                 )
@@ -50,7 +50,7 @@ class OptModel(object):
         self.allocation_capacity = [
             [
                 LpVariable(
-                    f"plant_capacity_{p}_{c}",
+                    f"plant_capacity_{c}_{p}",
                     lowBound=0,
                     cat=const.LpContinuous,
                 )
@@ -72,7 +72,7 @@ class OptModel(object):
     def create_constraints(self):
         print("Create constraints")
 
-        # One plant must be planted in exactly one container
+        # Each plant must be planted
         self.plant_allocation_constraint = {
             f"plant_allocation_constraint_{p}": self.model.addConstraint(
                 LpConstraint(
@@ -116,6 +116,20 @@ class OptModel(object):
             )
             for c in range(self.no_containers)
         }
+        self.container_capacity_constraint = {
+            f"container_capacity_bis_{c}": self.model.addConstraint(
+                LpConstraint(
+                    e=lpSum(
+                        self.allocation_flag[c][p]*self.soil_capacity_wanted[p] for p in range(self.no_plants)
+                    ),
+                    sense=const.LpConstraintLE,
+                    name=f"container_capacity_bis_{c}",
+                    rhs=self.containers_capacity[c],
+                ),
+            )
+            for c in range(self.no_containers)
+        }
+        
 
         # Whether container is used
         self.container_allocation_constraint = {
@@ -157,7 +171,7 @@ class OptModel(object):
 
         # Liters used (containers fully filled with soil even for one small plant)
         self.model.setObjective(self.allocation_count)
-    
+
     def optimize(self):
         solver = PULP_CBC_CMD(
             mip=1,
@@ -174,7 +188,7 @@ class OptModel(object):
             for p in range(self.no_plants):
                 if self.allocation_flag[c][p].varValue != 0 :
                     print(self.plants[p].name, self.containers[c].name)
-    
+
     def show_result_plan_by_container(self):
         for c in range(self.no_containers):
             container_result = []
@@ -188,7 +202,13 @@ class OptModel(object):
                 print("Plan for :", self.containers[c].name)
                 print("Using :", total_used, "/", self.containers[c].capacity, "L of soil")
                 print(container_result)
-      
+
+        # For debug
+        #for c in range(self.no_containers):
+        #    for p in range(self.no_plants):
+        #        if self.allocation_capacity[c][p].varValue != 0.0 :
+        #            print(c, p, self.plants[p].name, self.allocation_flag[c][p].varValue, self.plants[p].capacity_needed, self.allocation_capacity[c][p].varValue, self.soil_capacity_wanted[p])
+
 
 def generate_model_parameters(config, plant_demand_df, containers):
     print("Generate model parameters")
@@ -200,7 +220,6 @@ def generate_model_parameters(config, plant_demand_df, containers):
     containers_capacity = ContainerManager.generate_max_capacity(containers)
 
     parameters = {
-        "demand" : demand,
         "soil_capacity_wanted" : soil_capacity_wanted,
         "plants" : plants,
         "containers" : containers,
