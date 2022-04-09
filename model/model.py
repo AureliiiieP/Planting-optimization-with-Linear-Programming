@@ -1,4 +1,5 @@
 from pulp import LpProblem, LpVariable, LpMinimize, LpConstraint
+from pulp import const
 from pulp import PULP_CBC_CMD
 from model.garden_processing import Plant, ContainerGrid
 from model.demand_processing import PlantDemand
@@ -40,10 +41,11 @@ class OptModel(object):
                         lowBound=0,
                         cat=const.LpBinary,
                     )
-                    for x in range(self.no_cell_x)
+                    for y in range(self.no_cell_y)
                 ]
-                for y in range(self.no_cell_y)
+                for x in range(self.no_cell_x)
             ]
+            for i in range(self.no_plants)
         ]
         pass
 
