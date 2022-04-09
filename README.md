@@ -12,7 +12,7 @@ Given a set of seeds we would like to plant :
 
 <img src="doc/plants.png"/>
 
-We would like to decide which containers to use :
+We would like to decide which containers to use among a set of containers with various shape, capacity, size :
 
 <img src="doc/containers.png"/>
 
