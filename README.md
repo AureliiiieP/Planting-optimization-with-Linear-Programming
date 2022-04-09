@@ -5,15 +5,18 @@ Small project to learn how to design and solve Linear Programming models using P
 Optimize how to plant seeds in containers since it's Spring !
 
 ## Introduction
-The goal is to decide how to allocate plants to the available containers based on their characteristics while minimizing number of containers used and amount of soil to prepare/buy.
-
-<img src="doc/plants.png"/>
 
 Every plant has its own characteristics. Some plants need very deep containers to leave enough space for roots to grow (e.g. potato) or need enough free soil around them as they need lots of nutrient (e.g. zucchini) while others can grow with very limited space & ressources (e.g. radish).
 
+<img src="doc/plants.png"/>
+
+Likewise, containers all have different shape and capacity. 
+
+Some may only be suitable for some types of plants while other might be suitable to mostly any but require to buy more soil than necessary.
+
 <img src="doc/containers.png"/>
 
-Depending on the plant & containers size, we would like to decide where to plant each seed.
+The goal is to efficiently plan how to plant our seeds in the available containers by minimizing number of containers used and volume of soil to prepare/buy while also making sure that the allocated containers are suitable for each plant.
 
 ## Environment
 ```
