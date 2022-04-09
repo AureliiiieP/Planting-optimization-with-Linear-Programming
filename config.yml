@@ -15,3 +15,5 @@ seed_quantity:
     Zucchini : 1
     Basil : 1
     Chive : 1
+solver:
+  gap_tolerance : 0.005

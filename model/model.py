@@ -1,4 +1,5 @@
-from pulp import LpProblem, LpMinimize
+from pulp import LpProblem, LpVariable, LpMinimize, LpConstraint
+from pulp import PULP_CBC_CMD
 from model.garden_processing import Plant, ContainerGrid
 from model.demand_processing import PlantDemand
 from copy import deepcopy
@@ -56,6 +57,14 @@ class OptModel(object):
         # 1 if space_available >= space_needed. space_available/space_needed otherwise.
         #self.total_plant_happiness
         pass
+    
+    def optimize(self):
+        solver = PULP_CBC_CMD(
+            mip=1,
+            msg=1,
+            threads=1,
+            gapRel=self.params["gap_tolerance"],
+        )
 
 def generate_model_parameters(config, plant_demand_df):
     print("Generate model parameters")
