@@ -1,0 +1,11 @@
+container_size:
+  - length : 78 #cm
+  - width : 46 #cm
+seed_quantity:
+  - radish : 8
+  - bush_bean : 1
+  - stevia : 1
+  - garlic : 1
+  - zucchini : 1
+  - basil : 1
+  - chive : 1
