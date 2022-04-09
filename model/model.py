@@ -1,4 +1,4 @@
-from pulp import LpProblem, LpVariable, LpMinimize, LpConstraint, LpStatus
+from pulp import LpProblem, LpVariable, LpMaximize, LpConstraint, LpStatus, lpSum
 from pulp import const, value
 from pulp import PULP_CBC_CMD
 from model.garden_processing import Plant, ContainerGrid
@@ -13,6 +13,7 @@ class OptModel(object):
     ):
         self.config = deepcopy(config)
         self.parameters = deepcopy(parameters)
+        self.demand = self.parameters["demand"]
         self.plants = self.parameters["plants"]
         self.container = self.parameters["container"]
         self.grid = self.container.grid
@@ -20,12 +21,13 @@ class OptModel(object):
         self.no_cell_x = self.container.no_x
         self.no_cell_y = self.container.no_y
 
-        self.model = LpProblem(name="plant_opt", sense=LpMinimize)
+        self.model = LpProblem(name="plant_opt", sense=LpMaximize)
 
         self.create_decision_variables()
         self.create_constraints()
         self.create_object_function()
-
+        print("Create model for", self.no_plants, "seeds in", self.no_cell_x, "x", self.no_cell_y, "cells.")
+    
     def generate_container_grid(self):
         pass
 
@@ -46,20 +48,70 @@ class OptModel(object):
             ]
             for i in range(self.no_plants)
         ]
-        pass
+
+        self.happiness_plant = [
+            LpVariable(
+                f"happiness_plant_{i}",
+                lowBound=0,
+                cat=const.LpContinuous,
+            )
+            for i in range(self.no_plants)
+        ]
 
     def create_constraints(self):
         print("Create constraints")
         # Quantity placed in container match demand quantity for each type of seed i
-        # Only one seed per cell
-        pass
+        self.quantity_match_demand_constraint = {
+            f"quantity_seed_{i}": self.model.addConstraint(
+                LpConstraint(
+                    e=lpSum(
+                        self.allocation[i][x][y] for x in range(self.no_cell_x) for y in range(self.no_cell_y)
+                    ),
+                    sense=const.LpConstraintEQ,
+                    name=f"quantity_seed_{i}",
+                    rhs=self.demand[i],
+                ),
+            )
+            for i in range(self.no_plants)
+        }
+
+        # Only one seed maximum per cell
+        self.cell_allocation_flag_constraint = {
+            f"cell_allocation_flag_{x}_{y}": self.model.addConstraint(
+                LpConstraint(
+                    e=lpSum(
+                        self.allocation[i][x][y] for i in range(self.no_plants)
+                    ),
+                    sense=const.LpConstraintLE,
+                    name=f"cell_allocation_flag_{x}_{y}",
+                    rhs=1,
+                ),
+            )
+            for x in range(self.no_cell_x)
+            for y in range(self.no_cell_y)
+        }
+
+        # Happiness per plant
+        self.happiness_plant_constraint = {
+            f"happiness_plant_{i}": self.model.addConstraint(
+                LpConstraint(
+                    e=self.happiness_plant[i],
+                    sense=const.LpConstraintEQ,
+                    name=f"happiness_plant_{i}",
+                    rhs=1,
+                ),
+            )
+            for i in range(self.no_plants)
+        }
 
     def create_object_function(self):
         print("Create objective function")
         # A plant is happy if space needed is respected
         # 1 if space_available >= space_needed. space_available/space_needed otherwise.
         #self.total_plant_happiness
-        pass
+        self.total_happiness = lpSum(self.happiness_plant[i] for i in range(self.no_plants))
+        objective = self.total_happiness
+        self.model.setObjective(objective)
     
     def optimize(self):
         solver = PULP_CBC_CMD(
@@ -70,7 +122,7 @@ class OptModel(object):
         )
         self.model.solve(solver=solver)
         print(f"LpStatus : {LpStatus[self.model.status]}")
-        print(f"Ojbective: {value(self.model.objective)}")
+        print(f"Objective: {value(self.model.objective)}")
 
 def generate_model_parameters(config, plant_demand_df):
     print("Generate model parameters")

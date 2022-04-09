@@ -23,7 +23,8 @@ class Plant(object):
                 space_needed = space_needed,
                 sun_exposure = sun_exposure
             )
-            plants.append(plant)
+            for quantity in range(row["quantity"]) :
+                plants.append(plant)
         return plants
 
     @staticmethod

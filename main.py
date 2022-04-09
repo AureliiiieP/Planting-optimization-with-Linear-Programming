@@ -20,7 +20,8 @@ def optimization():
     # Optimization model
     ###################################
     parameters = generate_model_parameters(config, plant_demand_df)
-    build_model(config, parameters)
+    model = build_model(config, parameters)
+    model.optimize()
     pass
 
 if __name__ == "__main__":
