@@ -28,7 +28,8 @@ def optimization():
     model = build_model(config, parameters)
     model.optimize()
     if model.model.status == 1:
-        print(model.show_result_plan())
+        #model.show_result_plan_by_plant()
+        model.show_result_plan_by_container()
 
 if __name__ == "__main__":
     optimization()

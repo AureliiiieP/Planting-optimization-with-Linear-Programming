@@ -169,11 +169,26 @@ class OptModel(object):
         print(f"LpStatus : {LpStatus[self.model.status]}")
         print(f"Objective: {value(self.model.objective)}")
 
-    def show_result_plan(self):
+    def show_result_plan_by_plant(self):
         for c in range(self.no_containers):
             for p in range(self.no_plants):
                 if self.allocation_flag[c][p].varValue != 0 :
                     print(self.plants[p].name, self.containers[c].name)
+    
+    def show_result_plan_by_container(self):
+        for c in range(self.no_containers):
+            container_result = []
+            total_used = 0
+            for p in range(self.no_plants):
+                if self.allocation_flag[c][p].varValue != 0 :
+                    container_result.append((self.plants[p].name, self.plants[p].capacity_needed))
+                    total_used += self.plants[p].capacity_needed
+            if container_result != []:
+                print("=========================")
+                print("Plan for :", self.containers[c].name)
+                print("Using :", total_used, "/", self.containers[c].capacity, "L of soil")
+                print(container_result)
+      
 
 def generate_model_parameters(config, plant_demand_df, containers):
     print("Generate model parameters")
