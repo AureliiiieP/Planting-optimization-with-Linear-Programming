@@ -60,16 +60,16 @@ class OptModel(object):
 
     def create_constraints(self):
         print("Create constraints")
-        # Quantity placed in container match demand quantity for each type of seed i
-        self.quantity_match_demand_constraint = {
-            f"quantity_seed_{i}": self.model.addConstraint(
+        # All demanded seeds must be placed somewhere in the container
+        self.placed_seed_constraint = {
+            f"placed_seed_constraint{i}": self.model.addConstraint(
                 LpConstraint(
                     e=lpSum(
                         self.allocation[i][x][y] for x in range(self.no_cell_x) for y in range(self.no_cell_y)
                     ),
                     sense=const.LpConstraintEQ,
-                    name=f"quantity_seed_{i}",
-                    rhs=self.demand[i],
+                    name=f"placed_seed_constraint{i}",
+                    rhs=1,
                 ),
             )
             for i in range(self.no_plants)
@@ -123,6 +123,15 @@ class OptModel(object):
         self.model.solve(solver=solver)
         print(f"LpStatus : {LpStatus[self.model.status]}")
         print(f"Objective: {value(self.model.objective)}")
+    
+    def generate_output_grid(self):
+        grid = [[[] for x in range(self.no_cell_x)] for y in range(self.no_cell_y)]
+        for x in range(self.no_cell_x) :
+            for y in range(self.no_cell_y):
+                for i in range(self.no_plants):
+                    if self.allocation[i][x][y].varValue != 0.0 :
+                        grid[y][x] = self.plants[i].name
+        return grid
 
 def generate_model_parameters(config, plant_demand_df):
     print("Generate model parameters")
