@@ -1,5 +1,5 @@
-from pulp import LpProblem, LpVariable, LpMinimize, LpConstraint
-from pulp import const
+from pulp import LpProblem, LpVariable, LpMinimize, LpConstraint, LpStatus
+from pulp import const, value
 from pulp import PULP_CBC_CMD
 from model.garden_processing import Plant, ContainerGrid
 from model.demand_processing import PlantDemand
@@ -26,12 +26,11 @@ class OptModel(object):
         self.create_constraints()
         self.create_object_function()
 
-        
-
     def generate_container_grid(self):
         pass
 
     def create_decision_variables(self):
+        print("Create decision variables")
         # Allocation for seed i for each grid cell with coodinates (x, y)
         self.allocation = [
             [
@@ -50,11 +49,13 @@ class OptModel(object):
         pass
 
     def create_constraints(self):
+        print("Create constraints")
         # Quantity placed in container match demand quantity for each type of seed i
         # Only one seed per cell
         pass
 
     def create_object_function(self):
+        print("Create objective function")
         # A plant is happy if space needed is respected
         # 1 if space_available >= space_needed. space_available/space_needed otherwise.
         #self.total_plant_happiness
@@ -65,8 +66,11 @@ class OptModel(object):
             mip=1,
             msg=1,
             threads=1,
-            gapRel=self.params["gap_tolerance"],
+            gapRel=self.config["solver"]["gap_tolerance"],
         )
+        self.model.solve(solver=solver)
+        print(f"LpStatus : {LpStatus[self.model.status]}")
+        print(f"Ojbective: {value(self.model.objective)}")
 
 def generate_model_parameters(config, plant_demand_df):
     print("Generate model parameters")
@@ -88,7 +92,7 @@ def generate_model_parameters(config, plant_demand_df):
 def build_model(config, parameters):
     print("Build model")
     model = OptModel(config=config, parameters=parameters)
-    pass
+    return model
 
 
 
