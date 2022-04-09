@@ -1,8 +1,9 @@
-from pulp import LpProblem, LpVariable, LpMaximize, LpConstraint, LpStatus, lpSum
+import numpy as np
+from pulp import LpProblem, LpVariable, LpMinimize, LpConstraint, LpStatus, lpSum
 from pulp import const, value
 from pulp import PULP_CBC_CMD
-from model.garden_processing import Plant, ContainerGrid
-from model.demand_processing import PlantDemand
+from model.garden_manager import Plant, Container
+from model.demand_processing import PlantDemand, ContainerManager
 from copy import deepcopy
 
 class OptModel(object):
@@ -15,103 +16,147 @@ class OptModel(object):
         self.parameters = deepcopy(parameters)
         self.demand = self.parameters["demand"]
         self.plants = self.parameters["plants"]
-        self.container = self.parameters["container"]
-        self.grid = self.container.grid
+        self.soil_capacity_wanted = self.parameters["soil_capacity_wanted"]
+        self.containers = self.parameters["containers"]
+        self.containers_capacity = self.parameters["containers_capacity"]
+        self.is_suitable = self.parameters["is_suitable"]
         self.no_plants = len(self.plants)
-        self.no_cell_x = self.container.no_x
-        self.no_cell_y = self.container.no_y
+        self.no_containers = len(self.containers)
 
-        self.model = LpProblem(name="plant_opt", sense=LpMaximize)
+        self.model = LpProblem(name="plant_opt", sense=LpMinimize)
 
         self.create_decision_variables()
         self.create_constraints()
-        self.create_object_function()
-        print("Create model for", self.no_plants, "seeds in", self.no_cell_x, "x", self.no_cell_y, "cells.")
-    
-    def generate_container_grid(self):
-        pass
+        self.create_objective_function()
+        print("Create model for", self.no_plants, "plants in", self.no_containers, "containers.")
 
+                
     def create_decision_variables(self):
         print("Create decision variables")
-        # Allocation for seed i for each grid cell with coodinates (x, y)
-        self.allocation = [
+        # Allocation of plant p for container c
+        self.allocation_flag = [
             [
-                [
-                    LpVariable(
-                        f"seed_{i}_x_{x}_y_{y}",
-                        lowBound=0,
-                        cat=const.LpBinary,
-                    )
-                    for y in range(self.no_cell_y)
-                ]
-                for x in range(self.no_cell_x)
+                LpVariable(
+                    f"plant_{p}_{c}",
+                    lowBound=0,
+                    cat=const.LpBinary,
+                )
+                for p in range(self.no_plants)
             ]
-            for i in range(self.no_plants)
+            for c in range(self.no_containers)
         ]
 
-        self.happiness_plant = [
+        # Allocated capacity of plant p for container c
+        self.allocation_capacity = [
+            [
+                LpVariable(
+                    f"plant_capacity_{p}_{c}",
+                    lowBound=0,
+                    cat=const.LpContinuous,
+                )
+                for p in range(self.no_plants)
+            ]
+            for c in range(self.no_containers)
+        ]
+
+        # Whether container is used
+        self.container_allocation_flag = [
             LpVariable(
-                f"happiness_plant_{i}",
+                f"container_{c}",
                 lowBound=0,
-                cat=const.LpContinuous,
+                cat=const.LpBinary,
             )
-            for i in range(self.no_plants)
+            for c in range(self.no_containers)
         ]
 
     def create_constraints(self):
         print("Create constraints")
-        # All demanded seeds must be placed somewhere in the container
-        self.placed_seed_constraint = {
-            f"placed_seed_constraint{i}": self.model.addConstraint(
+
+        # One plant must be planted in exactly one container
+        self.plant_allocation_constraint = {
+            f"plant_allocation_constraint_{p}": self.model.addConstraint(
                 LpConstraint(
                     e=lpSum(
-                        self.allocation[i][x][y] for x in range(self.no_cell_x) for y in range(self.no_cell_y)
+                        self.allocation_flag[c][p] for c in range(self.no_containers)
                     ),
                     sense=const.LpConstraintEQ,
-                    name=f"placed_seed_constraint{i}",
+                    name=f"plant_allocation_constraint_{p}",
                     rhs=1,
                 ),
             )
-            for i in range(self.no_plants)
+            for p in range(self.no_plants)
         }
 
-        # Only one seed maximum per cell
-        self.cell_allocation_flag_constraint = {
-            f"cell_allocation_flag_{x}_{y}": self.model.addConstraint(
+        # Each plant capacity must be respected
+        self.allocated_plant_capacity_constraint = {
+            f"allocated_plant_capacity_constraint_{p}": self.model.addConstraint(
                 LpConstraint(
                     e=lpSum(
-                        self.allocation[i][x][y] for i in range(self.no_plants)
+                        self.allocation_capacity[c][p] for c in range(self.no_containers)
+                    ),
+                    sense=const.LpConstraintEQ,
+                    name=f"allocated_plant_capacity_constraint_{p}",
+                    rhs=self.soil_capacity_wanted[p],
+                ),
+            )
+            for p in range(self.no_plants)
+        }
+
+        # Capacity of each container must be respected
+        self.container_capacity_constraint = {
+            f"container_capacity_{c}": self.model.addConstraint(
+                LpConstraint(
+                    e=lpSum(
+                        self.allocation_capacity[c][p] for p in range(self.no_plants)
                     ),
                     sense=const.LpConstraintLE,
-                    name=f"cell_allocation_flag_{x}_{y}",
-                    rhs=1,
+                    name=f"container_capacity_{c}",
+                    rhs=self.containers_capacity[c],
                 ),
             )
-            for x in range(self.no_cell_x)
-            for y in range(self.no_cell_y)
+            for c in range(self.no_containers)
         }
 
-        # Happiness per plant
-        self.happiness_plant_constraint = {
-            f"happiness_plant_{i}": self.model.addConstraint(
+        # Whether container is used
+        self.container_allocation_constraint = {
+            f"container_allocation_constraint_{c}": self.model.addConstraint(
                 LpConstraint(
-                    e=self.happiness_plant[i],
-                    sense=const.LpConstraintEQ,
-                    name=f"happiness_plant_{i}",
-                    rhs=1,
+                    e= self.container_allocation_flag[c]
+                    - lpSum(
+                        self.allocation_flag[c][p] for p in range(self.no_plants)
+                    ),
+                    sense=const.LpConstraintLE,
+                    name=f"container_allocation_constraint_{c}",
+                    rhs=0,
                 ),
             )
-            for i in range(self.no_plants)
+            for c in range(self.no_containers)
         }
 
-    def create_object_function(self):
+        self.suitable_container_constraint = {
+            f"suitable_container": self.model.addConstraint(
+                LpConstraint(
+                    e=lpSum(
+                        self.allocation_flag[c][p]
+                        * (1-self.is_suitable[c][p])
+                        for c in range(self.no_containers)
+                        for p in range(self.no_plants)
+                    ),
+                    sense=const.LpConstraintEQ,
+                    rhs=0,
+                    name=f"suitable_container",
+                ),
+            )
+        }
+
+    def create_objective_function(self):
         print("Create objective function")
-        # A plant is happy if space needed is respected
-        # 1 if space_available >= space_needed. space_available/space_needed otherwise.
-        #self.total_plant_happiness
-        self.total_happiness = lpSum(self.happiness_plant[i] for i in range(self.no_plants))
-        objective = self.total_happiness
-        self.model.setObjective(objective)
+        # Number of containers used
+        self.allocation_count = lpSum(self.container_allocation_flag[c]
+        for c in range(self.no_containers))
+
+        # Liters used (containers fully filled with soil even for one small plant)
+        self.model.setObjective(self.allocation_count)
     
     def optimize(self):
         solver = PULP_CBC_CMD(
@@ -123,30 +168,29 @@ class OptModel(object):
         self.model.solve(solver=solver)
         print(f"LpStatus : {LpStatus[self.model.status]}")
         print(f"Objective: {value(self.model.objective)}")
-    
-    def generate_output_grid(self):
-        grid = [[[] for x in range(self.no_cell_x)] for y in range(self.no_cell_y)]
-        for x in range(self.no_cell_x) :
-            for y in range(self.no_cell_y):
-                for i in range(self.no_plants):
-                    if self.allocation[i][x][y].varValue != 0.0 :
-                        grid[y][x] = self.plants[i].name
-        return grid
 
-def generate_model_parameters(config, plant_demand_df):
+    def show_result_plan(self):
+        for c in range(self.no_containers):
+            for p in range(self.no_plants):
+                if self.allocation_flag[c][p].varValue != 0 :
+                    print(self.plants[p].name, self.containers[c].name)
+
+def generate_model_parameters(config, plant_demand_df, containers):
     print("Generate model parameters")
-    plants = Plant.read_from_demand(plant_demand_df)
+    # Demand
+    plants = PlantDemand.get_plants_from_demand(plant_demand_df)
+    soil_capacity_wanted = PlantDemand.get_needed_capacity_per_plant(plant_demand_df, plants)
     demand = PlantDemand.calculate_demand_per_plant(plant_demand_df, plants)
-    space_wanted = Plant.get_size_per_plant(plant_demand_df, plants)
-    container_size = config["container_size"]
-    container = ContainerGrid(length=container_size["length"], width=container_size["width"], cell_size = config["cell_size"])
+    is_suitable = ContainerManager.generate_suitable_parameters(plants, containers)
+    containers_capacity = ContainerManager.generate_max_capacity(containers)
 
     parameters = {
-        "container_size" : container_size,
         "demand" : demand,
-        "space_wanted" : space_wanted,
+        "soil_capacity_wanted" : soil_capacity_wanted,
         "plants" : plants,
-        "container" : container
+        "containers" : containers,
+        "containers_capacity" : containers_capacity,
+        "is_suitable" : is_suitable
     }
     return parameters
 
@@ -154,6 +198,5 @@ def build_model(config, parameters):
     print("Build model")
     model = OptModel(config=config, parameters=parameters)
     return model
-
 
 
