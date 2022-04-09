@@ -1,19 +1,26 @@
 paths:
   raw:
     plant_master : "data/raw/PlantMaster.xlsx" 
+    container_master : "data/raw/ContainerMaster.xlsx"
   intermediate:
     demand : "data/intermediate/PlantDemand.xlsx"
-container_size:
-    length : 78 #cm
-    width : 46 #cm
+  output:
+    grid_result : "result/grid_result.png"
 cell_size: 5
 seed_quantity:
-    Radish : 8
-    Bush Bean : 1
-    Stevia : 1
-    Garlic : 1
-    Zucchini : 1
-    Basil : 1
-    Chive : 1
+  Radish : 8
+  Bush Bean : 1
+  Stevia : 1
+  Garlic : 1
+  Zucchini : 1
+  Basil : 1
+  Chive : 1
+  Passion Fruit : 1
+container_quantity:
+  small : 5
+  deep_pot : 1
+  large_rectangular_container : 1
+  raised_bed_part_1 : 1
+  raised_bed_part_2 : 1
 solver:
   gap_tolerance : 0.005
