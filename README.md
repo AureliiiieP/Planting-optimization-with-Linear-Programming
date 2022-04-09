@@ -6,13 +6,13 @@ Optimize how to plant seeds in containers since it's Spring !
 
 ## Introduction
 
-Every plant has its own characteristics. Some plants need very deep containers to leave enough space for roots to grow (e.g. potato) or need enough free soil around them as they need lots of nutrient (e.g. zucchini) while others can grow with very limited space & ressources (e.g. radish).
+Every plant has its own characteristics. Some plants need very deep containers to leave enough space for roots to grow (e.g. potato) or need enough free soil and nutrients (e.g. zucchini) while others can grow with very limited space & ressources (e.g. radish).
+
+Given a set of seeds we would like to plant :
 
 <img src="doc/plants.png"/>
 
-Likewise, containers all have different shape and capacity. 
-
-Some may only be suitable for some types of plants while other might be suitable to mostly any but require to buy more soil than necessary.
+We would like to decide which containers to use :
 
 <img src="doc/containers.png"/>
 
