@@ -24,3 +24,4 @@ container_quantity:
   raised_bed_part_2 : 1
 solver:
   gap_tolerance : 0.005
+  dummy_param : 9999

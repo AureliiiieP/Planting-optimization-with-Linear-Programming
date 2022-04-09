@@ -29,8 +29,6 @@ class OptModel(object):
         self.create_objective_function()
         print("Create model for", self.no_plants, "plants in", self.no_containers, "containers.")
 
-
-
     def create_decision_variables(self):
         print("Create decision variables")
         # Allocation of plant p for container c
@@ -72,7 +70,7 @@ class OptModel(object):
     def create_constraints(self):
         print("Create constraints")
 
-        # Each plant must be planted
+        # A plant must be planted in a container
         self.plant_allocation_constraint = {
             f"plant_allocation_constraint_{p}": self.model.addConstraint(
                 LpConstraint(
@@ -87,7 +85,7 @@ class OptModel(object):
             for p in range(self.no_plants)
         }
 
-        # Each plant capacity must be respected
+        # Each plant must have enough soil capacity to grow
         self.allocated_plant_capacity_constraint = {
             f"allocated_plant_capacity_constraint_{p}": self.model.addConstraint(
                 LpConstraint(
@@ -102,7 +100,7 @@ class OptModel(object):
             for p in range(self.no_plants)
         }
 
-        # Capacity of each container must be respected
+        # Each container has a maximum capacity
         self.container_capacity_constraint = {
             f"container_capacity_{c}": self.model.addConstraint(
                 LpConstraint(
@@ -147,6 +145,7 @@ class OptModel(object):
             for c in range(self.no_containers)
         }
 
+        # Plants must be planted in a suitable container
         self.suitable_container_constraint = {
             f"suitable_container": self.model.addConstraint(
                 LpConstraint(
@@ -165,11 +164,11 @@ class OptModel(object):
 
     def create_objective_function(self):
         print("Create objective function")
+
         # Number of containers used
         self.allocation_count = lpSum(self.container_allocation_flag[c]
         for c in range(self.no_containers))
 
-        # Liters used (containers fully filled with soil even for one small plant)
         self.model.setObjective(self.allocation_count)
 
     def optimize(self):
@@ -184,12 +183,19 @@ class OptModel(object):
         print(f"Objective: {value(self.model.objective)}")
 
     def show_result_plan_by_plant(self):
+        """Print model optimization result plan organized by plant.
+        For each plant we want to plant, show the container allocated.
+        """
         for c in range(self.no_containers):
             for p in range(self.no_plants):
                 if self.allocation_flag[c][p].varValue != 0 :
                     print(self.plants[p].name, self.containers[c].name)
 
     def show_result_plan_by_container(self):
+        """Print model optimization result plan organized by container.
+        For each container, show the demand capacity from allocated plants, maximum capacity of the container
+        and all plants allocated.
+        """
         for c in range(self.no_containers):
             container_result = []
             total_used = 0
@@ -211,11 +217,12 @@ class OptModel(object):
 
 
 def generate_model_parameters(config, plant_demand_df, containers):
+    """Generate model parameters
+    """
     print("Generate model parameters")
     # Demand
     plants = PlantDemand.get_plants_from_demand(plant_demand_df)
     soil_capacity_wanted = PlantDemand.get_needed_capacity_per_plant(plant_demand_df, plants)
-    demand = PlantDemand.calculate_demand_per_plant(plant_demand_df, plants)
     is_suitable = ContainerManager.generate_suitable_parameters(plants, containers)
     containers_capacity = ContainerManager.generate_max_capacity(containers)
 
