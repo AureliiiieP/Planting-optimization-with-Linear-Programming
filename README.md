@@ -51,6 +51,7 @@ Using : 8 / 10 L of soil
 ```
 
 ## Ideas list
+- [ ] Make a pretty figure for the output !
 - [ ] Add more constraints (sun exposure, soil type)
 - [ ] Add scheduling of when to sow (e.g. radish = March, garlic = winter)
 - [ ] Add scheduling of when to add fertilizer considering that soil nutrients are depleting at different rate depending on which plant is planted and growth stage. (e.g. bush bean produces its own nitrogen and therefore doesn't need nitrogen from fertilizer) (e.g. Adding too much nitrogen fertilizer can cause radish to only grow leaves instead of bulb)
